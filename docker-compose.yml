@@ -1,0 +1,243 @@
+# Local / single-host orchestration for the Credit Risk Intelligence
+# Platform -- production-style by default (this file). For local
+# development, `docker compose up` also auto-merges `docker-compose.override.yml`
+# (bind-mounted source + hot reload); for running the test suite inside a
+# container, use `docker compose -f docker-compose.yml -f docker-compose.test.yml run tests`.
+# See `docs/DOCKER_COMPOSE.md` for the full environment-separation story.
+#
+# Design decision: two networks, not one. `backend` holds Postgres, Redis,
+# MLflow, the API, and the optional ML worker -- nothing on it is reachable
+# from outside except via explicit `ports:` mappings (which exist here for
+# local-dev convenience; a real deployment would drop them and reach these
+# services only from inside the cluster/VPC). `frontend` holds only the
+# Streamlit UI and the API. The API is the only service on both networks --
+# if the frontend container were ever compromised, it has no network path
+# to Postgres or Redis directly, only through the API's own authenticated
+# surface. This is the same "least-privilege network segmentation" pattern
+# `deployment/kubernetes/`'s per-service Services already give you for free
+# in a cluster; compose needs it spelled out explicitly.
+#
+# Design decision: `deploy.resources.limits/reservations` are set on every
+# service even though this file isn't run under Docker Swarm -- the
+# Compose Specification (what `docker compose` v2 implements) applies these
+# as plain container resource limits (`--memory`/`--cpus`) outside Swarm
+# too, so they're not dead weight here.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-credit_risk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-credit_risk}
+      POSTGRES_DB: ${POSTGRES_DB:-credit_risk}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-credit_risk}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.25", memory: 128M }
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 256M }
+        reservations: { cpus: "0.1", memory: 64M }
+    restart: unless-stopped
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    environment:
+      MLFLOW_ALLOW_FILE_STORE: "true"
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.25", memory: 128M }
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-credit_risk}:${POSTGRES_PASSWORD:-credit_risk}@postgres:5432/${POSTGRES_DB:-credit_risk}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      APP_ENV: production
+      DEBUG: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - model_artifacts:/app/models/artifacts
+      - ./reports:/app/reports
+      # Reference data for drift monitoring, analytics and data-quality runs.
+      - ./data:/app/data
+    networks:
+      - backend
+      - frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 1024M }
+        reservations: { cpus: "0.5", memory: 256M }
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_BASE_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    networks:
+      - frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.25", memory: 128M }
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-http://localhost:8000}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/login"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.25", memory: 128M }
+    restart: unless-stopped
+
+  # --- Optional: `docker compose --profile ml up ml-worker` -------------
+  # Not started by a plain `docker compose up` (no `depends_on` from the
+  # core stack points at it, and it's gated behind a profile) -- this is a
+  # run-to-completion batch job (training / retraining), not a long-lived
+  # service. See `Dockerfile.ml` for why it's a separate image.
+  ml-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    profiles: ["ml"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-credit_risk}:${POSTGRES_PASSWORD:-credit_risk}@postgres:5432/${POSTGRES_DB:-credit_risk}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      APP_ENV: production
+    volumes:
+      - model_artifacts:/app/models/artifacts
+      - ./reports:/app/reports
+      - ./data:/app/data
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits: { cpus: "4.0", memory: 4096M }
+        reservations: { cpus: "1.0", memory: 1024M }
+    restart: "no"
+
+  # --- Optional: `docker compose --profile tools up adminer` ------------
+  # A lightweight (~30MB, single-container, no separate DB of its own) web
+  # UI for inspecting Postgres during local development. Never started by
+  # default and never intended for a production profile.
+  adminer:
+    image: adminer:4
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 128M }
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  mlflow_data:
+  model_artifacts:

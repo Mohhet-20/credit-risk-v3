@@ -1,0 +1,79 @@
+# Redis Deployment + PVC + Service.
+#
+# Design decision (this pass): previously the Kubernetes manifests had no
+# Redis at all, while `05-api.yaml` runs 2 API replicas. `configs/settings.py`
+# documents that omitting REDIS_URL falls back to an in-process
+# `InMemoryTTLCache` -- "correct for local dev, tests, and a single-replica
+# deployment" -- which a 2-replica Deployment is not: cache state (and the
+# rate limiter's in-process counters) would silently diverge per pod, with
+# no error, just inconsistent behavior depending on which pod handled a
+# given request. Adding Redis here and wiring REDIS_URL in
+# `01-configmap.yaml` makes the multi-replica API deployment actually
+# behave the way `core/cache.py`'s own docstring says it needs to.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: credit-risk
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: credit-risk
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # a single ReadWriteOnce PVC can't support a rolling update
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server", "--appendonly", "yes"]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: redis-storage
+              mountPath: /data
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "250m", memory: "256Mi" }
+      volumes:
+        - name: redis-storage
+          persistentVolumeClaim:
+            claimName: redis-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: credit-risk
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379

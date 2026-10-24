@@ -1,0 +1,10 @@
+# Development/test-only dependencies, on top of the production runtime set.
+# Kept out of requirements.txt so the API/frontend/ML Docker images never
+# ship test tooling in their production image (smaller image, less attack
+# surface) -- see Dockerfile.api's `test` stage and `make install-dev`.
+-r requirements.txt
+
+pytest==9.1.1
+pytest-cov==7.1.0
+httpx==0.28.1
+fakeredis==2.26.2

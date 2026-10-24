@@ -1,0 +1,39 @@
+# Requires an ingress controller (e.g. ingress-nginx) and, for TLS,
+# cert-manager with a ClusterIssuer named "letsencrypt-prod". Replace the
+# host names before applying.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: credit-risk-ingress
+  namespace: credit-risk
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.credit-risk.example.com
+        - api.credit-risk.example.com
+      secretName: credit-risk-tls
+  rules:
+    - host: app.credit-risk.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 8501
+    - host: api.credit-risk.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8000

@@ -1,0 +1,89 @@
+# syntax=docker/dockerfile:1
+#
+# API image for the Credit Risk Intelligence Platform.
+#
+# Design decision: a two-stage build (builder -> runtime). The runtime
+# dependency set (scikit-learn, xgboost, lightgbm, catboost, shap) ships
+# prebuilt manylinux wheels for this platform, so the split isn't about
+# discarding compiled artifacts -- it's about never letting pip's
+# download/build cache, `gcc`/`g++` (kept available in case a future
+# dependency bump ever needs to compile from source), or apt's package
+# index reach the image that actually ships. Everything the builder stage
+# installs lands in a venv at /opt/venv, and only that directory is copied
+# into the runtime stage.
+#
+# ---- Stage 1: builder ----
+FROM python:3.10-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /build
+
+# Build-time-only OS packages live ONLY in this stage -- they never reach
+# the runtime image below.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Installing dependencies before copying app code means code-only changes
+# don't invalidate this (slow) layer's cache.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ---- Stage 2: runtime ----
+FROM python:3.10-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MLFLOW_ALLOW_FILE_STORE=true \
+    PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# `libgomp1` is required at runtime by XGBoost/LightGBM's OpenMP-parallelized
+# code paths; `curl` backs the HEALTHCHECK below. Neither is needed at build
+# time, so neither reaches the builder stage above.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# The populated venv is the entire payoff of the multi-stage split: pip's
+# cache, gcc/g++, and the builder stage's apt package lists never reach
+# this image.
+COPY --from=builder /opt/venv /opt/venv
+
+COPY . .
+
+# Directories the app writes to at runtime (model artifacts / DB / reports
+# are normally overridden by volumes or a managed DB in production, but
+# creating them here keeps a bare `docker run` working out of the box).
+RUN mkdir -p data/raw data/processed/checkpoints models/artifacts mlruns reports \
+    && useradd --create-home --uid 1000 appuser \
+    && chown -R appuser:appuser /app /opt/venv
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# ---- Stage 3: test (docker-compose.test.yml's `tests` service builds with
+# `target: test`; a bare `docker build -f Dockerfile.api .` -- the default
+# target -- never reaches this stage, so pytest/httpx/fakeredis never ship
+# in the production image). `tests/` itself isn't COPYed here: it's
+# .dockerignore'd out of the build context entirely (same reason), so
+# docker-compose.test.yml bind-mounts it at runtime instead.
+FROM runtime AS test
+USER root
+COPY requirements-dev.txt .
+RUN pip install --no-cache-dir -r requirements-dev.txt
+USER appuser
+ENTRYPOINT ["pytest"]

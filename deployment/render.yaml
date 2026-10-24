@@ -1,0 +1,46 @@
+# Render "Blueprint" spec: https://render.com/docs/blueprint-spec
+# Deploy with: connect this repo in the Render dashboard and select
+# "New Blueprint Instance", or `render blueprint launch` via the Render CLI.
+#
+# Provisions: a managed Postgres instance, the API as a Docker web service,
+# and the Streamlit frontend as a second Docker web service. MLflow is not
+# included here for cost reasons on Render's free/starter tiers -- point
+# MLFLOW_TRACKING_URI at an external MLflow instance, or add a third
+# `type: pserv` service running the same command used in docker-compose.yml.
+databases:
+  - name: credit-risk-db
+    plan: starter
+    databaseName: credit_risk
+    user: credit_risk
+
+services:
+  - type: web
+    name: credit-risk-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: MLFLOW_ALLOW_FILE_STORE
+        value: "true"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: credit-risk-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: credit-risk-frontend
+    runtime: docker
+    dockerfilePath: ./Dockerfile.frontend
+    plan: starter
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: credit-risk-api
+          property: hostport

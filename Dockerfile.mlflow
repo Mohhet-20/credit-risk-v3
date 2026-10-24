@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+#
+# MLflow tracking server image for the Credit Risk Intelligence Platform.
+#
+# Design decision: previously both docker-compose.yml and
+# deployment/kubernetes/04-mlflow.yaml ran a bare `python:3.10-slim` image
+# and `pip install`ed MLflow via the container's startup command -- every
+# restart/pod reschedule needed outbound PyPI access and paid the install
+# cost again, and a network-restricted deployment (the same constraint
+# .github/workflows/ci.yml's pip-audit job calls out) couldn't start MLflow
+# at all. Baking the install into the image at build time fixes both.
+FROM python:3.10-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MLFLOW_ALLOW_FILE_STORE=true
+
+RUN pip install --no-cache-dir mlflow==3.14.0
+
+WORKDIR /mlflow
+
+RUN useradd --create-home --uid 1000 appuser \
+    && mkdir -p /mlflow/artifacts \
+    && chown -R appuser:appuser /mlflow
+USER appuser
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=15s --retries=10 \
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:5000')" || exit 1
+
+CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000", \
+     "--backend-store-uri", "sqlite:////mlflow/mlflow.db", \
+     "--default-artifact-root", "/mlflow/artifacts"]

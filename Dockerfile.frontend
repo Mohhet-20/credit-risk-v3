@@ -1,0 +1,59 @@
+# syntax=docker/dockerfile:1
+#
+# Streamlit frontend image for the Credit Risk Intelligence Platform.
+#
+# Design decision: the frontend image ships the full `requirements.txt`
+# rather than a slimmed-down frontend-only subset. This costs some image
+# size, but keeps a single source of truth for pinned versions instead of
+# maintaining two dependency files that can drift out of sync -- for a
+# portfolio-scale project the operational simplicity outweighs the disk
+# cost. As with `Dockerfile.api`, a builder/runtime split keeps pip's
+# cache and apt's package index out of the shipped image.
+#
+# ---- Stage 1: builder ----
+FROM python:3.10-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /build
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ---- Stage 2: runtime ----
+FROM python:3.10-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+
+COPY . .
+
+RUN useradd --create-home --uid 1000 appuser \
+    && chown -R appuser:appuser /app /opt/venv
+USER appuser
+
+# Overridden by docker-compose to point at the `api` service's internal
+# hostname; defaults to localhost for a bare `docker run`.
+ENV API_BASE_URL=http://localhost:8000
+
+EXPOSE 8501
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+CMD ["streamlit", "run", "frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]

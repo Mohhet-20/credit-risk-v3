@@ -1,0 +1,423 @@
+{
+  "model_name": "catboost",
+  "version": "v_catboost_20261024T045728",
+  "generated_at": "2026-10-24T04:57:28+00:00",
+  "split": {
+    "train": {
+      "start": "2023-01-01",
+      "end": "2024-03-14",
+      "n": 30000,
+      "default_rate": 0.162
+    },
+    "validation": {
+      "start": "2024-03-14",
+      "end": "2024-08-05",
+      "n": 10000,
+      "default_rate": 0.1699
+    },
+    "oot_test": {
+      "start": "2024-08-05",
+      "end": "2024-12-30",
+      "n": 10000,
+      "default_rate": 0.1702
+    },
+    "duplicates_removed": 50
+  },
+  "oot_metrics": {
+    "model": "catboost",
+    "roc_auc": 0.8599,
+    "pr_auc": 0.5857,
+    "brier_score": 0.09845,
+    "precision": 0.6502,
+    "recall": 0.4477,
+    "f1": 0.5303,
+    "expected_calibration_error": 0.00868,
+    "cv_roc_auc_mean": 0.8666832865176518,
+    "cv_roc_auc_std": 0.0038519189895739095,
+    "gini": 0.7198,
+    "ks": 0.5607,
+    "observed_default_rate": 0.1702,
+    "mean_predicted_pd": 0.1653,
+    "n": 10000,
+    "n_defaults": 1702,
+    "roc_auc_ci95": [
+      0.8506,
+      0.869
+    ],
+    "ks_ci95": [
+      0.5412,
+      0.5825
+    ]
+  },
+  "threshold_metrics": {
+    "threshold": 0.1528,
+    "precision": 0.4057,
+    "recall": 0.7967,
+    "f1": 0.5377,
+    "true_positives": 1356,
+    "true_negatives": 6312,
+    "false_positives": 1986,
+    "false_negatives": 346,
+    "approval_rate": 0.6658
+  },
+  "cost_matrix": {
+    "false_negative": 5.0,
+    "false_positive": 1.0
+  },
+  "score_psi_train_vs_oot": 0.002,
+  "decile_table": [
+    {
+      "decile": 1,
+      "n": 1000,
+      "defaults": 672,
+      "min_pd": 0.5166,
+      "max_pd": 1.0,
+      "mean_pd": 0.6769,
+      "bad_rate": 0.672,
+      "capture_rate": 0.3948,
+      "lift": 3.9483
+    },
+    {
+      "decile": 2,
+      "n": 1000,
+      "defaults": 379,
+      "min_pd": 0.3099,
+      "max_pd": 0.5166,
+      "mean_pd": 0.3852,
+      "bad_rate": 0.379,
+      "capture_rate": 0.6175,
+      "lift": 2.2268
+    },
+    {
+      "decile": 3,
+      "n": 1000,
+      "defaults": 250,
+      "min_pd": 0.2031,
+      "max_pd": 0.3099,
+      "mean_pd": 0.2235,
+      "bad_rate": 0.25,
+      "capture_rate": 0.7644,
+      "lift": 1.4689
+    },
+    {
+      "decile": 4,
+      "n": 1000,
+      "defaults": 146,
+      "min_pd": 0.1143,
+      "max_pd": 0.2031,
+      "mean_pd": 0.1476,
+      "bad_rate": 0.146,
+      "capture_rate": 0.8502,
+      "lift": 0.8578
+    },
+    {
+      "decile": 5,
+      "n": 1000,
+      "defaults": 104,
+      "min_pd": 0.0732,
+      "max_pd": 0.1143,
+      "mean_pd": 0.0907,
+      "bad_rate": 0.104,
+      "capture_rate": 0.9113,
+      "lift": 0.611
+    },
+    {
+      "decile": 6,
+      "n": 1000,
+      "defaults": 60,
+      "min_pd": 0.0447,
+      "max_pd": 0.0732,
+      "mean_pd": 0.0601,
+      "bad_rate": 0.06,
+      "capture_rate": 0.9465,
+      "lift": 0.3525
+    },
+    {
+      "decile": 7,
+      "n": 1000,
+      "defaults": 46,
+      "min_pd": 0.0162,
+      "max_pd": 0.0447,
+      "mean_pd": 0.0402,
+      "bad_rate": 0.046,
+      "capture_rate": 0.9736,
+      "lift": 0.2703
+    },
+    {
+      "decile": 8,
+      "n": 1000,
+      "defaults": 17,
+      "min_pd": 0.0162,
+      "max_pd": 0.0162,
+      "mean_pd": 0.0162,
+      "bad_rate": 0.017,
+      "capture_rate": 0.9835,
+      "lift": 0.0999
+    },
+    {
+      "decile": 9,
+      "n": 1000,
+      "defaults": 22,
+      "min_pd": 0.001,
+      "max_pd": 0.0162,
+      "mean_pd": 0.0114,
+      "bad_rate": 0.022,
+      "capture_rate": 0.9965,
+      "lift": 0.1293
+    },
+    {
+      "decile": 10,
+      "n": 1000,
+      "defaults": 6,
+      "min_pd": 0.0,
+      "max_pd": 0.001,
+      "mean_pd": 0.001,
+      "bad_rate": 0.006,
+      "capture_rate": 1.0,
+      "lift": 0.0353
+    }
+  ],
+  "fairness": {
+    "threshold": 0.1528,
+    "four_fifths_threshold": 0.8,
+    "attributes": {
+      "age_band": {
+        "groups": [
+          {
+            "group": "18-39",
+            "n": 4962,
+            "approval_rate": 0.6493,
+            "observed_default_rate": 0.1727,
+            "mean_predicted_pd": 0.1709,
+            "roc_auc": 0.8596,
+            "adverse_impact_ratio": 0.9361,
+            "passes_four_fifths": true
+          },
+          {
+            "group": "40-61",
+            "n": 4679,
+            "approval_rate": 0.6811,
+            "observed_default_rate": 0.1663,
+            "mean_predicted_pd": 0.1597,
+            "roc_auc": 0.859,
+            "adverse_impact_ratio": 0.982,
+            "passes_four_fifths": true
+          },
+          {
+            "group": "62+",
+            "n": 359,
+            "approval_rate": 0.6936,
+            "observed_default_rate": 0.1866,
+            "mean_predicted_pd": 0.1612,
+            "roc_auc": 0.8814,
+            "adverse_impact_ratio": 1.0,
+            "passes_four_fifths": true
+          }
+        ],
+        "min_adverse_impact_ratio": 0.9361,
+        "passes": true
+      },
+      "marital_status": {
+        "groups": [
+          {
+            "group": "divorced",
+            "n": 1266,
+            "approval_rate": 0.684,
+            "observed_default_rate": 0.1564,
+            "mean_predicted_pd": 0.1541,
+            "roc_auc": 0.8519,
+            "adverse_impact_ratio": 1.0,
+            "passes_four_fifths": true
+          },
+          {
+            "group": "married",
+            "n": 4519,
+            "approval_rate": 0.6636,
+            "observed_default_rate": 0.175,
+            "mean_predicted_pd": 0.1662,
+            "roc_auc": 0.8593,
+            "adverse_impact_ratio": 0.9702,
+            "passes_four_fifths": true
+          },
+          {
+            "group": "single",
+            "n": 3799,
+            "approval_rate": 0.6646,
+            "observed_default_rate": 0.17,
+            "mean_predicted_pd": 0.1676,
+            "roc_auc": 0.8645,
+            "adverse_impact_ratio": 0.9716,
+            "passes_four_fifths": true
+          },
+          {
+            "group": "widowed",
+            "n": 416,
+            "approval_rate": 0.6442,
+            "observed_default_rate": 0.1611,
+            "mean_predicted_pd": 0.1679,
+            "roc_auc": 0.8506,
+            "adverse_impact_ratio": 0.9418,
+            "passes_four_fifths": true
+          }
+        ],
+        "min_adverse_impact_ratio": 0.9418,
+        "passes": true
+      }
+    },
+    "passes": true
+  },
+  "candidates": [
+    {
+      "model": "logistic_regression",
+      "roc_auc": 0.8405,
+      "pr_auc": 0.5317,
+      "brier_score": 0.10495,
+      "precision": 0.6568,
+      "recall": 0.3261,
+      "f1": 0.4358,
+      "expected_calibration_error": 0.01132,
+      "cv_roc_auc_mean": 0.8479794723255255,
+      "cv_roc_auc_std": 0.005387725140150583
+    },
+    {
+      "model": "random_forest",
+      "roc_auc": 0.8549,
+      "pr_auc": 0.5628,
+      "brier_score": 0.10086,
+      "precision": 0.6444,
+      "recall": 0.4089,
+      "f1": 0.5004,
+      "expected_calibration_error": 0.00656,
+      "cv_roc_auc_mean": 0.8593920322794247,
+      "cv_roc_auc_std": 0.004015744540640271
+    },
+    {
+      "model": "xgboost",
+      "roc_auc": 0.8598,
+      "pr_auc": 0.5821,
+      "brier_score": 0.09919,
+      "precision": 0.6552,
+      "recall": 0.4154,
+      "f1": 0.5085,
+      "expected_calibration_error": 0.01217,
+      "cv_roc_auc_mean": 0.8654280879015579,
+      "cv_roc_auc_std": 0.003897794111571806
+    },
+    {
+      "model": "lightgbm",
+      "roc_auc": 0.8595,
+      "pr_auc": 0.5804,
+      "brier_score": 0.09909,
+      "precision": 0.6526,
+      "recall": 0.426,
+      "f1": 0.5155,
+      "expected_calibration_error": 0.00913,
+      "cv_roc_auc_mean": 0.8652676562197602,
+      "cv_roc_auc_std": 0.00428387772318605
+    },
+    {
+      "model": "catboost",
+      "roc_auc": 0.8599,
+      "pr_auc": 0.5857,
+      "brier_score": 0.09845,
+      "precision": 0.6502,
+      "recall": 0.4477,
+      "f1": 0.5303,
+      "expected_calibration_error": 0.00868,
+      "cv_roc_auc_mean": 0.8666832865176518,
+      "cv_roc_auc_std": 0.0038519189895739095
+    },
+    {
+      "model": "stacking_ensemble",
+      "roc_auc": 0.8598,
+      "pr_auc": 0.5855,
+      "brier_score": 0.09861,
+      "precision": 0.6772,
+      "recall": 0.3907,
+      "f1": 0.4955,
+      "expected_calibration_error": 0.00872
+    },
+    {
+      "model": "blending_ensemble",
+      "roc_auc": 0.86,
+      "pr_auc": 0.5855,
+      "brier_score": 0.09867,
+      "precision": 0.6565,
+      "recall": 0.4177,
+      "f1": 0.5106,
+      "expected_calibration_error": 0.00993
+    }
+  ],
+  "validation_candidates": [
+    {
+      "model": "logistic_regression",
+      "roc_auc": 0.8522,
+      "pr_auc": 0.5459,
+      "brier_score": 0.10231,
+      "precision": 0.6675,
+      "recall": 0.3331,
+      "f1": 0.4444,
+      "expected_calibration_error": 0.0
+    },
+    {
+      "model": "random_forest",
+      "roc_auc": 0.8619,
+      "pr_auc": 0.5669,
+      "brier_score": 0.09931,
+      "precision": 0.6472,
+      "recall": 0.4102,
+      "f1": 0.5022,
+      "expected_calibration_error": 0.0
+    },
+    {
+      "model": "xgboost",
+      "roc_auc": 0.8679,
+      "pr_auc": 0.5842,
+      "brier_score": 0.09725,
+      "precision": 0.6648,
+      "recall": 0.4273,
+      "f1": 0.5202,
+      "expected_calibration_error": 0.0
+    },
+    {
+      "model": "lightgbm",
+      "roc_auc": 0.8685,
+      "pr_auc": 0.5841,
+      "brier_score": 0.09708,
+      "precision": 0.6607,
+      "recall": 0.4344,
+      "f1": 0.5241,
+      "expected_calibration_error": 0.0
+    },
+    {
+      "model": "catboost",
+      "roc_auc": 0.8687,
+      "pr_auc": 0.5853,
+      "brier_score": 0.09696,
+      "precision": 0.6482,
+      "recall": 0.462,
+      "f1": 0.5395,
+      "expected_calibration_error": 0.0
+    },
+    {
+      "model": "stacking_ensemble",
+      "roc_auc": 0.8689,
+      "pr_auc": 0.5867,
+      "brier_score": 0.09699,
+      "precision": 0.6813,
+      "recall": 0.4014,
+      "f1": 0.5052,
+      "expected_calibration_error": 0.0
+    },
+    {
+      "model": "blending_ensemble",
+      "roc_auc": 0.8679,
+      "pr_auc": 0.5858,
+      "brier_score": 0.09718,
+      "precision": 0.6627,
+      "recall": 0.4267,
+      "f1": 0.5192,
+      "expected_calibration_error": 0.0
+    }
+  ]
+}

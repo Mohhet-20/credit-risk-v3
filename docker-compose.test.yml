@@ -1,0 +1,40 @@
+# Test-profile compose file -- run the full pytest suite inside a container
+# built from the same image the API ships in, rather than trusting "it
+# passed on my machine". Usage:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm tests
+#
+# Design decision: the `tests` service reuses `Dockerfile.api`'s image
+# rather than getting its own Dockerfile -- the whole point is verifying
+# the exact artifact that would be deployed, not a parallel test-only build
+# that could drift from it. It talks to the same `postgres` service as the
+# real API stack (so the *actual* Postgres driver path gets exercised, not
+# just the SQLite fixtures unit/service tests use), but does NOT depend on
+# `redis` or `mlflow` being healthy first -- the suite's `MLFLOW_ALLOW_FILE_STORE=true`
+# and its own conftest fixtures don't require either to be live.
+#
+# Design decision: builds with `target: test` (Dockerfile.api's dedicated
+# test stage), not the default `runtime` target -- pytest/httpx/fakeredis
+# only get installed for this stage, never in the image that actually ships.
+# `tests/` itself is .dockerignore'd out of the build context entirely (same
+# reason), so it's bind-mounted here instead of being baked into the image.
+services:
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      target: test
+    profiles: ["test"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-credit_risk}:${POSTGRES_PASSWORD:-credit_risk}@postgres:5432/${POSTGRES_DB:-credit_risk}
+      MLFLOW_ALLOW_FILE_STORE: "true"
+      APP_ENV: test
+    volumes:
+      - ./tests:/app/tests:ro
+    entrypoint: ["pytest", "tests/", "-v", "--cov=.", "--cov-report=term-missing"]
+    networks:
+      - backend
+    restart: "no"

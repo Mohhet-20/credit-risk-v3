@@ -1,0 +1,25 @@
+# Development overrides -- auto-merged by `docker compose up` whenever this
+# file sits next to `docker-compose.yml` (no `-f` flag needed). Delete or
+# rename this file locally if you want `docker compose up` to behave exactly
+# like the production-style base file; CI and any real deployment reference
+# `docker-compose.yml` directly (or `docker-compose.yml` + `docker-compose.test.yml`)
+# and never pick this file up implicitly.
+#
+# What changes for dev: source code is bind-mounted into `api`/`frontend`
+# so edits take effect without a rebuild, `uvicorn --reload` watches for
+# changes, `DEBUG`/`APP_ENV` flip to development values, and both services'
+# ports are unchanged (still published) since local dev wants direct access.
+services:
+  api:
+    command: ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./:/app
+      - model_artifacts:/app/models/artifacts
+
+  frontend:
+    volumes:
+      - ./:/app

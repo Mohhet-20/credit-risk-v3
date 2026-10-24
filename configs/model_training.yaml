@@ -1,0 +1,88 @@
+# Model & training configuration.
+# Kept out of Python so a non-engineer (risk/ML ops) can retune the search
+# budget or swap the champion metric without touching pipeline code.
+
+random_state: 42
+n_cv_folds: 5          # used for final evaluation / calibration
+tuning_cv_folds: 3     # cheaper CV used inside the Optuna objective
+optuna_n_trials: 20
+optuna_timeout_seconds: 300
+
+# Metric Optuna optimizes per-model, and the metric used for final model selection.
+optimization_metric: roc_auc
+selection_metric: pr_auc   # PR-AUC is more informative than ROC-AUC under class imbalance.
+
+class_imbalance:
+  strategy: class_weight   # one of: class_weight, smote, both
+  smote_k_neighbors: 5
+
+cost_sensitive:
+  # Business cost matrix: cost of a false negative (approving a defaulter) is
+  # typically much higher than a false positive (rejecting a good borrower).
+  cost_false_negative: 5.0
+  cost_false_positive: 1.0
+
+calibration:
+  method: isotonic   # one of: isotonic, sigmoid (Platt scaling)
+  cv_folds: 5
+
+threshold_optimization:
+  method: cost_sensitive  # one of: f1, youden_j, cost_sensitive
+
+models:
+  logistic_regression:
+    enabled: true
+    search_space:
+      C: {type: float, low: 0.001, high: 10.0, log: true}
+      penalty: {type: categorical, choices: ["l2"]}
+      solver: {type: categorical, choices: ["lbfgs"]}
+
+  random_forest:
+    enabled: true
+    search_space:
+      n_estimators: {type: int, low: 100, high: 400}
+      max_depth: {type: int, low: 3, high: 18}
+      min_samples_split: {type: int, low: 2, high: 20}
+      min_samples_leaf: {type: int, low: 1, high: 10}
+      max_features: {type: categorical, choices: ["sqrt", "log2"]}
+
+  xgboost:
+    enabled: true
+    search_space:
+      n_estimators: {type: int, low: 100, high: 500}
+      max_depth: {type: int, low: 3, high: 9}
+      learning_rate: {type: float, low: 0.005, high: 0.3, log: true}
+      subsample: {type: float, low: 0.6, high: 1.0}
+      colsample_bytree: {type: float, low: 0.6, high: 1.0}
+      min_child_weight: {type: int, low: 1, high: 10}
+      reg_alpha: {type: float, low: 1.0e-8, high: 10.0, log: true}
+      reg_lambda: {type: float, low: 1.0e-8, high: 10.0, log: true}
+
+  lightgbm:
+    enabled: true
+    search_space:
+      n_estimators: {type: int, low: 100, high: 500}
+      num_leaves: {type: int, low: 15, high: 200}
+      learning_rate: {type: float, low: 0.005, high: 0.3, log: true}
+      subsample: {type: float, low: 0.6, high: 1.0}
+      colsample_bytree: {type: float, low: 0.6, high: 1.0}
+      min_child_samples: {type: int, low: 5, high: 50}
+      reg_alpha: {type: float, low: 1.0e-8, high: 10.0, log: true}
+      reg_lambda: {type: float, low: 1.0e-8, high: 10.0, log: true}
+
+  catboost:
+    enabled: true
+    search_space:
+      iterations: {type: int, low: 100, high: 500}
+      depth: {type: int, low: 3, high: 9}
+      learning_rate: {type: float, low: 0.005, high: 0.3, log: true}
+      l2_leaf_reg: {type: float, low: 1.0, high: 10.0}
+
+ensemble:
+  stacking_enabled: true
+  blending_enabled: true
+  stacking_final_estimator: logistic_regression
+  blend_holdout_fraction: 0.2
+  # Parsimony rule: an ensemble must beat the best single model by at least
+  # this much on `selection_metric` (validation window) to become champion.
+  min_improvement: 0.005

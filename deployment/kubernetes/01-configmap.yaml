@@ -1,0 +1,20 @@
+# Non-secret configuration shared by the api and frontend Deployments.
+# Values that vary by environment (dev/staging/prod) should be overridden
+# via a Kustomize overlay or Helm values file rather than editing this
+# manifest directly.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: credit-risk-config
+  namespace: credit-risk
+data:
+  APP_ENV: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  MLFLOW_TRACKING_URI: "http://mlflow:5000"
+  MLFLOW_ALLOW_FILE_STORE: "true"
+  API_BASE_URL: "http://api:8000"
+  RATE_LIMIT_PER_MINUTE: "60"
+  # Required for the 2-replica `api` Deployment (05-api.yaml) to share cache
+  # and rate-limit state consistently across pods -- see 03a-redis.yaml.
+  REDIS_URL: "redis://redis:6379/0"

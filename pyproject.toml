@@ -1,0 +1,24 @@
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+extend-exclude = "(mlruns|models/artifacts|data/raw|data/processed|web)/"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["mlruns", "models/artifacts", "data/raw", "data/processed", "web"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "E501", # line length is enforced by black/ruff format, not worth double-flagging
+    "B008", # Depends(...) in a function default is FastAPI's documented DI pattern, not a bug
+    "UP038", # isinstance(x, (int, float)) is idiomatic and faster than X | Y for isinstance checks
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning:fastapi.*",
+    "ignore::sklearn.exceptions.ConvergenceWarning",
+]
