@@ -18,7 +18,7 @@ shap==0.49.1
 lime==0.2.0.1
 
 # --- Experiment tracking / model registry ---
-mlflow==3.14.0
+mlflow==3.17.2
 
 # --- API layer ---
 fastapi==0.139.0
@@ -26,7 +26,7 @@ uvicorn[standard]==0.51.0
 pydantic==2.13.4
 pydantic-settings==2.14.2
 email-validator==2.3.0
-python-jose[cryptography]==3.5.0
+PyJWT==2.15.1
 passlib[bcrypt]==1.7.4
 bcrypt==3.2.0
 pyotp==2.9.0
@@ -42,7 +42,7 @@ alembic==1.18.5
 redis==5.2.1
 
 # --- Frontend ---
-streamlit==1.59.1
+streamlit==1.66.1
 plotly==6.9.0
 matplotlib==3.10.9
 

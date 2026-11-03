@@ -33,7 +33,7 @@ from datetime import datetime, timedelta, timezone
 from enum import IntEnum
 
 import pyotp
-from jose import JWTError, jwt
+import jwt
 from passlib.context import CryptContext
 
 from configs.settings import get_settings
@@ -105,7 +105,7 @@ def decode_token(token: str) -> dict:
     settings = get_settings()
     try:
         return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-    except JWTError as exc:
+    except jwt.PyJWTError as exc:
         raise AuthenticationError(f"Invalid or expired token: {exc}") from exc
 
 

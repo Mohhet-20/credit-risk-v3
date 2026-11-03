@@ -36,7 +36,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-INSECURE_DEFAULT_JWT_SECRET = "dev-only-insecure-secret"
+INSECURE_DEFAULT_JWT_SECRET = "dev-only-insecure-secret-do-not-deploy"
 MIN_PRODUCTION_SECRET_LENGTH = 32
 
 # Substrings that mark a secret as an unedited placeholder regardless of its
