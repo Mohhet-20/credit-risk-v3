@@ -36,6 +36,8 @@ def main() -> int:
         return 2
     shutil.rmtree(WORKING, ignore_errors=True)  # previous run's database (and SQLite journals) and registry
     shutil.copytree(SHOWCASE, WORKING)
+    # A writable reports directory (async batch results land here), seeded with the validation report it serves.
+    shutil.copytree(ROOT / "reports", WORKING / "reports", dirs_exist_ok=True)
     os.environ.update(
         {
             "APP_ENV": "production",
@@ -43,6 +45,7 @@ def main() -> int:
             "ALLOW_SQLITE_IN_PRODUCTION": "true",
             "DATABASE_URL": f"sqlite:///{(WORKING / 'app.db').as_posix()}",
             "MODEL_ARTIFACT_DIR": str(WORKING / "artifacts"),
+            "REPORTS_DIR": str(WORKING / "reports"),
             "MLFLOW_ALLOW_FILE_STORE": "true",
             "MLFLOW_TRACKING_URI": str(WORKING / "mlruns"),
             "GUEST_ACCESS_ENABLED": "true",

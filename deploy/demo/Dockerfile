@@ -26,6 +26,9 @@ WORKDIR /app
 COPY . .
 
 FROM runtime-base AS showcase
+# The build drives the API through FastAPI's TestClient, which needs httpx (a dev requirement, pinned in
+# requirements-dev.txt). Installed in this stage only; the runtime image does not carry it.
+RUN pip install --no-cache-dir httpx==0.28.1
 RUN python scripts/demo_build.py && mkdir -p /app/showcase && cp -a /tmp/credit-demo/. /app/showcase/
 
 FROM runtime-base AS runtime
