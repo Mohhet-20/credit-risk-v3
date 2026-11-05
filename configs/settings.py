@@ -83,9 +83,17 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
+    # Self-service sign-up (POST /auth/register, viewer/loan_officer only). Hosted demos turn it off.
+    registration_enabled: bool = True
+    # Public demo: POST /auth/guest signs visitors in as a shared risk_analyst guest. Off by default.
+    guest_access_enabled: bool = False
+    guest_username: str = "guest"
 
     # --- Database ---
     database_url: str = Field(default=f"sqlite:///{PROJECT_ROOT / 'data' / 'processed' / 'app.db'}")
+    # Explicit opt-in for SQLite with app_env=production: acceptable only for a single-replica instance whose data is
+    # disposable (the hosted public demo). Real deployments use PostgreSQL.
+    allow_sqlite_in_production: bool = False
 
     # --- MLflow ---
     mlflow_tracking_uri: str = str(PROJECT_ROOT / "mlruns")
@@ -154,7 +162,7 @@ class Settings(BaseSettings):
                 "Strict-Transport-Security header (see api/middleware.py) and may "
                 "leak stack traces via framework default error pages."
             )
-        if self.database_url.startswith("sqlite"):
+        if self.database_url.startswith("sqlite") and not self.allow_sqlite_in_production:
             problems.append(
                 "DATABASE_URL points at SQLite in a production environment -- SQLite "
                 "does not support concurrent writers safely across multiple API "

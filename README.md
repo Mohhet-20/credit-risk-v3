@@ -5,8 +5,11 @@ calibrated probability of default, a cost-optimised approve/decline decision
 and the legally required reasons for a decline. It is built and validated the
 way a bank's model-risk team would expect.
 
+**Live demo: [credit-risk-v3.vercel.app](https://credit-risk-v3.vercel.app)** — choose *Explore the live demo* to score an
+application and see the decline reasons a lender must give. Details in [Hosted demo](#hosted-demo).
+
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Tests](https://img.shields.io/badge/tests-429%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-435%20passing-brightgreen)
 
 ## Results (out-of-time test window)
 
@@ -136,6 +139,33 @@ sequenceDiagram
     A->>DB: prediction + audit log (decision, reason codes)
     A-->>U: decision, PD, score, adverse-action reasons
 ```
+
+## Hosted demo
+
+The [live demo](https://credit-risk-v3.vercel.app) is the Next.js console on Vercel, which proxies `/api/*` to the API on
+Render's free tier (512 MB). The full stack (PostgreSQL, Redis, MLflow and the Streamlit workbench) runs from
+`docker-compose.yml`; the demo is the API and the web console.
+
+- **The validated champion, not a retrain.** The image serves exactly the CatBoost model behind the results above and
+  [`reports/MODEL_VALIDATION.md`](reports/MODEL_VALIDATION.md) ([`deploy/demo/champion/`](deploy/demo/champion), ~180 KB,
+  produced by `make train` with the pinned library versions), so the numbers on the site and in this README are the same
+  model's.
+- **A populated dashboard.** At image build time [`scripts/demo_build.py`](scripts/demo_build.py) scores 300
+  applications from the out-of-time window through `POST /predict`, skipping the generator's deliberately messy rows that
+  intake validation rejects. Each start shifts them so the newest is current, keeping monitoring's 30-day window full.
+- **Sign-in.** *Explore the live demo* (`POST /api/v1/auth/guest`, off unless `GUEST_ACCESS_ENABLED=true`,
+  rate-limited) signs visitors in as a shared `risk_analyst`: scoring with adverse-action reasons, SHAP/LIME and
+  counterfactual explanations, analytics, data quality and reports. It cannot promote models or administer users, and an
+  account with more power is never handed out as the guest. Self-registration is off and every pre-existing account gets
+  a random password at startup; the owner's administrator comes from hosting secrets (`CREDIT_ADMIN_USERNAME`,
+  `CREDIT_ADMIN_PASSWORD`).
+- **SQLite, explicitly.** Production mode refuses SQLite unless `ALLOW_SQLITE_IN_PRODUCTION=true`: right for one
+  disposable instance, wrong for anything with replicas or data to keep. Every start copies the showcase afresh
+  ([`scripts/demo_start.py`](scripts/demo_start.py)).
+- **Free-tier behaviour.** The instance sleeps when idle, so the first visit after a pause takes about a minute.
+
+Deploy files: [`render.yaml`](render.yaml), [`deploy/demo/Dockerfile`](deploy/demo/Dockerfile),
+[`web/vercel.json`](web/vercel.json). [`deployment/render.yaml`](deployment/render.yaml) is the full Render stack on paid plans.
 
 ## Quickstart
 

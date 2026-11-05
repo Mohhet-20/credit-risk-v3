@@ -8,7 +8,8 @@ import { useAuthStore } from "@/store/auth-store";
 // there `st.session_state`) rather than the app importing
 // `training`/`models`/`explainability` directly. Both frontends are equally
 // "just a client" of the versioned `/api/v1` contract.
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+// "/" means same origin: the hosted demo proxies /api/* to the API (web/vercel.json), so requests stay relative.
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 export const API_PREFIX = "/api/v1";
 
 export class ApiError extends Error {

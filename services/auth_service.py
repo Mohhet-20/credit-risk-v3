@@ -16,11 +16,19 @@ see `docs/SECURITY.md`.
 from __future__ import annotations
 
 import json
+import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+from configs.settings import get_settings
 from core.constants import ACCOUNT_LOCKOUT_MINUTES, MAX_FAILED_LOGIN_ATTEMPTS
-from core.exceptions import AccountLockedError, AuthenticationError, AuthorizationError, DuplicateResourceError
+from core.exceptions import (
+    AccountLockedError,
+    AuthenticationError,
+    AuthorizationError,
+    DuplicateResourceError,
+    ResourceNotFoundError,
+)
 from core.security import (
     build_totp_uri,
     create_access_token,
@@ -38,6 +46,7 @@ from repositories.audit_log_repository import AuditLogRepository
 from repositories.user_repository import UserRepository
 
 SELF_SERVICE_ROLES = frozenset({"viewer", "loan_officer"})
+GUEST_ROLE = "risk_analyst"
 
 
 @dataclass
@@ -84,6 +93,8 @@ class AuthService:
         role: str,
         requesting_user: User | None = None,
     ) -> User:
+        if requesting_user is None and not get_settings().registration_enabled:
+            raise ResourceNotFoundError("Self-service registration is turned off on this deployment.")
         if self.user_repo.get_by_username(username):
             raise DuplicateResourceError(f"Username '{username}' is already registered.")
 
@@ -198,6 +209,32 @@ class AuthService:
         user = self.user_repo.increment_token_version(user)  # rotate: this refresh token is now single-use
         self.audit_repo.log_action(user_id=user.id, action="token_refreshed", resource=f"user:{user.id}")
         return self._issue_tokens(user)
+
+    def guest_session(self, *, ip_address: str | None = None) -> TokenPair:
+        """Public demo: sign the visitor in as the shared guest account, a `risk_analyst` (score applications, see
+        decline reasons and explanations, analytics, data quality, reports; no model promotion, no administration).
+        Off unless GUEST_ACCESS_ENABLED. The account's password is random and never disclosed, and an account with
+        more power than risk_analyst is never handed out as the guest."""
+        settings = get_settings()
+        if not settings.guest_access_enabled:
+            raise ResourceNotFoundError("Guest access is not available on this deployment.")
+        guest = self.user_repo.get_by_username(settings.guest_username)
+        if guest is None:
+            guest = self.user_repo.create(
+                username=settings.guest_username,
+                email=f"{settings.guest_username}@guest.example.com",
+                hashed_password=hash_password(secrets.token_urlsafe(32)),
+                role=GUEST_ROLE,
+            )
+        if guest.role != GUEST_ROLE or not guest.is_active:
+            raise AuthorizationError("Guest access is misconfigured on this deployment.")
+        self.audit_repo.log_action(
+            user_id=guest.id,
+            action="guest_session_started",
+            resource=f"user:{guest.id}",
+            ip_address=ip_address,
+        )
+        return self._issue_tokens(guest)
 
     def _issue_tokens(self, user: User) -> TokenPair:
         return TokenPair(

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_BASE_URL": "/",
+      "NEXT_PUBLIC_GUEST_ACCESS": "true"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://credit-risk-v3-api.onrender.com/api/:path*" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}

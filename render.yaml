@@ -1,0 +1,23 @@
+# Render blueprint for the hosted public demo API. New > Blueprint > pick this repository.
+# The website is the Next.js console (web/) on Vercel, which proxies /api/* here.
+# Image: deploy/demo/Dockerfile - the validated champion, 300 scored applications for the dashboard, guest access,
+# a fresh copy on every start. The full stack (PostgreSQL, Redis, MLflow, Streamlit) is docker-compose.yml, and
+# deployment/render.yaml provisions it on paid Render plans.
+services:
+  - type: web
+    name: credit-risk-v3-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/demo/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["https://credit-risk-v3.vercel.app"]'
+      # Your private administrator account (normal sign-in form). Set both in the dashboard; never commit them.
+      - key: CREDIT_ADMIN_USERNAME
+        sync: false
+      - key: CREDIT_ADMIN_PASSWORD
+        sync: false

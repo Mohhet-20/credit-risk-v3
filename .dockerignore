@@ -28,3 +28,7 @@ docs
 tests
 web/node_modules
 web/.next
+
+# The model validation report (GET /models/validation-report) ships with the image that serves its model.
+!reports/model_validation.json
+!reports/MODEL_VALIDATION.md

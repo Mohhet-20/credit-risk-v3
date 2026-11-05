@@ -5,6 +5,25 @@ All notable changes to this project are documented here. Format loosely follows
 development pass that introduced them, since this platform was built as a sequence of
 deliberate, reviewed increments rather than a single commit.
 
+## [3.1.0] — Hosted demo
+
+### Added
+- **Hosted demo on free hosting** (`render.yaml`, `deploy/demo/Dockerfile`, `web/vercel.json`): serves the validated
+  champion from `deploy/demo/champion/`; 300 out-of-time applications scored at build time (`scripts/demo_build.py`);
+  fresh showcase, locked accounts and current timestamps on every start (`scripts/demo_start.py`).
+- **Guest sessions.** `POST /auth/guest` (off unless `GUEST_ACCESS_ENABLED`) signs visitors in as a shared,
+  rate-limited `risk_analyst`, never a more powerful account; the web console offers *Explore the live demo* when built
+  with `NEXT_PUBLIC_GUEST_ACCESS=true`.
+- `REGISTRATION_ENABLED` switch for self-service sign-up, and `ALLOW_SQLITE_IN_PRODUCTION` as an explicit opt-in for a
+  single-instance deployment.
+
+### Fixed
+- Docker images left out `reports/model_validation.json`, so `GET /models/validation-report` had nothing to serve
+  outside a bind-mounted checkout; `.dockerignore` now admits the validation report.
+- The web console treats `NEXT_PUBLIC_API_BASE_URL=/` as same-origin (behind a proxy) instead of a host.
+- Lint/format drift that failed CI's `ruff`/`black --check` (`core/security.py`, `frontend/app.py`,
+  `reporting/model_comparison_report.py`).
+
 ## [3.0.0] — Model-risk validation, fair lending and the web console
 
 ### Added

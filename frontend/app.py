@@ -96,16 +96,14 @@ elif not api_client.is_authenticated():
                     st.error(str(exc))
 else:
     st.success("You're signed in. Use the sidebar pages to navigate the platform:")
-    st.markdown(
-        """
+    st.markdown("""
         - **Executive Dashboard** — portfolio KPIs, approval trends, risk mix
         - **Predict** — score a single applicant or a batch CSV, download PDF reports
         - **Explainability** — SHAP breakdown, plain-English rationale, what-if simulator
         - **Model Comparison** — champion vs. challenger models, promote/rollback
         - **Customer Search** — browse and filter prediction history
         - **Monitoring** — drift detection, latency, prediction distribution
-        """
-    )
+        """)
     if st.button("Sign out"):
         api_client.logout()
         st.rerun()

@@ -32,8 +32,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from enum import IntEnum
 
-import pyotp
 import jwt
+import pyotp
 from passlib.context import CryptContext
 
 from configs.settings import get_settings

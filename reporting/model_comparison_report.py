@@ -51,14 +51,12 @@ def build_model_comparison_report_html(
         fig = _pr_auc_bar_fig(comparison_rows)
         chart_html = fig_to_base64_img(fig, "Model comparison chart") if fig is not None else ""
         table_html = df_to_html_table(pd.DataFrame(comparison_rows).drop(columns=["is_best"], errors="ignore"))
-        body_parts.append(
-            f"""
+        body_parts.append(f"""
         <h2>Cross-Model Metrics</h2>
         {table_html}
         {chart_html}
         <p>Best candidate by PR-AUC: <b>{best.get('model')}</b> ({best.get('pr_auc')}).</p>
-        """
-        )
+        """)
 
     if versions:
         versions_df = pd.DataFrame(
@@ -73,12 +71,10 @@ def build_model_comparison_report_html(
                 for v in versions
             ]
         )
-        body_parts.append(
-            f"""
+        body_parts.append(f"""
         <h2>Registered Versions</h2>
         {df_to_html_table(versions_df)}
-        """
-        )
+        """)
     else:
         body_parts.append(note_html("No model versions are registered yet."))
 

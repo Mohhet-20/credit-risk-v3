@@ -43,6 +43,26 @@ export function useLogin() {
   });
 }
 
+/** Hosted public demo: sign in as the shared risk-analyst guest (the API answers 404 unless guest access is on). */
+export function useGuestSession() {
+  const router = useRouter();
+  const setSession = useAuthStore((s) => s.setSession);
+
+  return useMutation({
+    mutationFn: async () => {
+      const tokens = await apiPost<{ access_token: string; refresh_token: string }>("/auth/guest");
+      const { data: user } = await apiClient.get<UserOut>(`${API_PREFIX}/auth/me`, {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      return { tokens, user };
+    },
+    onSuccess: ({ tokens, user }) => {
+      setSession(tokens.access_token, tokens.refresh_token, user);
+      router.push("/");
+    },
+  });
+}
+
 export function useRegister() {
   return useMutation({
     mutationFn: (input: RegisterInput) => apiPost<UserOut>("/auth/register", input),

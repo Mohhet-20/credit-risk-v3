@@ -66,6 +66,14 @@ def login(payload: LoginRequest, request: Request, auth_service: AuthService = D
     return LoginResponse(access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token)
 
 
+@router.post("/guest", response_model=TokenResponse)
+@limiter.limit("10/minute")
+def guest(request: Request, auth_service: AuthService = Depends(get_auth_service)):
+    """Public demo sign-in as the shared risk-analyst guest; 404 unless GUEST_ACCESS_ENABLED."""
+    tokens = auth_service.guest_session(ip_address=request.client.host if request.client else None)
+    return TokenResponse(access_token=tokens.access_token, refresh_token=tokens.refresh_token)
+
+
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(payload: RefreshRequest, auth_service: AuthService = Depends(get_auth_service)):
     tokens = auth_service.refresh(refresh_token=payload.refresh_token)
