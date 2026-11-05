@@ -55,7 +55,7 @@ class UserRole(str, Enum):
     an ordinal tier use `api/dependencies.py::require_roles()` (an explicit
     allow-list) rather than `require_role()` (ordinal "this tier or above").
 
-    VIEWER and LOAN_OFFICER double as the spec's "Read-Only User" and
+    VIEWER and LOAN_OFFICER double as the design's "Read-Only User" and
     "Business User" respectively -- kept as their original names rather than
     renamed, to avoid a breaking change across every existing role check,
     test, and stored user row.

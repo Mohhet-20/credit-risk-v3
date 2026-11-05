@@ -53,7 +53,7 @@ def _validate_password_strength(password: str) -> str:
 
 
 # Self-service roles only -- "Read-Only User" (viewer) and "Business User"
-# (loan_officer) in the spec's naming. Privileged roles (super_admin, admin,
+# (loan_officer) in the design's naming. Privileged roles (super_admin, admin,
 # ml_engineer, risk_analyst, auditor) can NEVER be requested through public
 # self-registration; see `services/auth_service.py::AuthService.register`'s
 # `SELF_SERVICE_ROLES` gate and `AdminUserCreate` below for how privileged

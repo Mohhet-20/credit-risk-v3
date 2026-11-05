@@ -13,7 +13,7 @@ construct a repository against an in-memory SQLite session with zero FastAPI
 machinery involved.
 
 This replaces the earlier flat `database/crud.py` module (kept working
-throughout Phases 1-6 for a schema this size, but a real duplication risk
+throughout for a schema this size, but a real duplication risk
 once a service layer needs the same queries) -- every function that used to
 live there now has a home as a method on the repository for its aggregate.
 """

@@ -7,7 +7,7 @@ Design decision: this is deliberately a NEW router mounted at root
 (`/health/...`), additive alongside the existing bare `GET /health` in
 `api/app.py`. The existing endpoint is already referenced by
 `deployment/kubernetes/*.yaml` and both Dockerfiles' `HEALTHCHECK`
-directives, verified working in earlier phases -- changing its shape or
+directives, verified working in earlier work -- changing its shape or
 path would risk breaking already-deployed infrastructure for zero benefit.
 `/health/liveness` and `/health/readiness` express the standard Kubernetes
 distinction the single bare endpoint never could: liveness answers "is the

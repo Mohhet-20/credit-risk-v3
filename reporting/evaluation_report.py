@@ -7,7 +7,7 @@ Design decision: `training/model_comparison.py::evaluate_candidate` computes
 a LEAN metric set (roc_auc, pr_auc, brier, precision/recall/f1 at a 0.5
 cutoff) during the training pipeline's cross-model ranking step --
 appropriate there, where the goal is fast comparison, not a full report.
-This module computes the FULLER set the spec calls for (accuracy, confusion
+This module computes the FULLER set the design calls for (accuracy, confusion
 matrix, calibration curve, lift chart, gain chart, a full threshold sweep)
 at report-generation time, evaluated at the model's OWN cost-sensitive
 decision threshold (`bundle.metadata["decision_threshold"]`) rather than the

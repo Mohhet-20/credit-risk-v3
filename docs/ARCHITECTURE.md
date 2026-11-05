@@ -90,7 +90,7 @@ domain exception type, translating it to the correct HTTP status code in exactly
 `AuditLogRepository`, `ModelVersionRepository`, `DataQualityReportRepository`), all sharing a small
 generic `BaseRepository[ModelT]` for the truly identical operations (get-by-id, list, add, delete).
 This replaced the earlier flat `database/crud.py` module — appropriate for the schema's size
-through Phase 6, but a real duplication risk once a service layer needed the same queries a router
+early on, but a real duplication risk once a service layer needed the same queries a router
 used to call directly. See `repositories/__init__.py` and `repositories/base.py` for the full
 rationale.
 

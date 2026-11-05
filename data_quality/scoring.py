@@ -1,7 +1,7 @@
 """
 Composite data-quality score: a single 0-100 number a dashboard can show at
 a glance, plus the component scores it's built from (validity, completeness,
-uniqueness) and two metadata fields the spec calls out separately
+uniqueness) and two metadata fields the design calls out separately
 (freshness, and the validation pass/fail verdict) rather than folding into
 the score itself.
 

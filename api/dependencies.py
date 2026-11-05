@@ -58,7 +58,7 @@ from services.user_service import UserService
 from services.workflow_service import WorkflowService
 
 
-# --- Model bundle (unchanged from prior phases) --------------------------------
+# --- Model bundle ------------------------------------------------------------
 @lru_cache
 def _cached_bundle(version: str) -> ModelBundle:
     settings = get_settings()
