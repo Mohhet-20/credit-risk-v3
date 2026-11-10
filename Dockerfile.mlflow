@@ -9,7 +9,7 @@
 # cost again, and a network-restricted deployment (the same constraint
 # .github/workflows/ci.yml's pip-audit job calls out) couldn't start MLflow
 # at all. Baking the install into the image at build time fixes both.
-FROM python:3.10-slim AS runtime
+FROM python:3.11-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

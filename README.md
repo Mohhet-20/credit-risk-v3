@@ -8,7 +8,7 @@ way a bank's model-risk team would expect.
 **Live demo: [credit-risk-v3.vercel.app](https://credit-risk-v3.vercel.app)** — choose *Explore the live demo* to score an
 application and see the decline reasons a lender must give. Details in [Hosted demo](#hosted-demo).
 
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Tests](https://img.shields.io/badge/tests-435%20passing-brightgreen)
 
 ## Results (out-of-time test window)
@@ -181,7 +181,7 @@ docker compose exec api python -m scripts.create_admin --username admin --email 
 Web console at http://localhost:3000, API docs at http://localhost:8000/docs, Streamlit at
 http://localhost:8501, MLflow at http://localhost:5000.
 
-**Local (Python 3.10+, Node 20+):**
+**Local (Python 3.11+, Node 20+):**
 
 ```bash
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
